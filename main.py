@@ -1,43 +1,51 @@
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import JSONResponse
+from register import register 
+from login import login
+from fastapi.middleware.cors import CORSMiddleware
+import numpy as np
 import cv2
 from ultralytics import YOLO
-from fastapi import File, UploadFile
-from fastapi.responses import JSONResponse
-import numpy as np
-from PIL import Image
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins, you can specify domains like ["https://example.com"]
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Load trained YOLOv8 model
 model = YOLO("weights/best.pt")
 
-# OpenCV webcam
-cap = cv2.VideoCapture(0)
+# Categories of waste
+RECYCLABLE = ['cardboard_box', 'can', 'plastic_bottle_cap', 'plastic_bottle', 'reuseable_paper']
+NON_RECYCLABLE = ['plastic_bag', 'scrap_paper', 'stick', 'plastic_cup', 'snack_bag', 'plastic_box', 'straw', 'plastic_cup_lid', 'scrap_plastic', 'cardboard_bowl', 'plastic_cultery']
+HAZARDOUS = ['battery', 'chemical_spray_can', 'chemical_plastic_bottle', 'chemical_plastic_gallon', 'light_bulb', 'paint_bucket']
 
-def generate_frames():
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
+# Points allocation system
+POINTS = {
+    'recyclable': 1,
+    'non_recyclable': 5,
+    'hazardous': 10
+}
 
-        # YOLO prediction
-        results = model.predict(source=frame, conf=0.25, verbose=True)
+def allocate_points(cls_name):
+    if cls_name in RECYCLABLE:
+        return POINTS['recyclable']
+    elif cls_name in NON_RECYCLABLE:
+        return POINTS['non_recyclable']
+    elif cls_name in HAZARDOUS:
+        return POINTS['hazardous']
+    return 0  # Default to 0 if waste type is unknown
 
-        # Print detected classes
-        boxes = results[0].boxes
-        if boxes is not None:
-            for box in boxes:
-                class_id = int(box.cls[0])
-                print("Detected:", model.names[class_id])
 
-        # Draw results
-        annotated_frame = results[0].plot()
+@app.get("/")
+async def read_root():
+    return {"Hello": "World"}
 
-        _, buffer = cv2.imencode('.jpg', annotated_frame)
-        frame_bytes = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 @app.post("/predict_image/")
 async def predict_image(file: UploadFile = File(...)):
@@ -50,21 +58,19 @@ async def predict_image(file: UploadFile = File(...)):
     # Predict using YOLO
     results = model.predict(img, conf=0.25, verbose=True)
 
-    # Parse detections
+    # Parse detections and allocate points
     detections = []
+    total_points = 0
     boxes = results[0].boxes
     if boxes is not None:
         for box in boxes:
             cls_id = int(box.cls[0])
             cls_name = model.names[cls_id]
-            detections.append(cls_name)
+            points = allocate_points(cls_name)
+            detections.append({'class': cls_name, 'points': points})
+            total_points += points
 
-    return JSONResponse(content={"detections": detections})
-       
-@app.get("/")
-def read_root():
-    return {"message": "Smart Waste System API is live!"}
+    return JSONResponse(content={"detections": detections, "total_points": total_points})
 
-@app.get("/video_feed")
-def video_feed():
-    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+app.include_router(register, prefix="/api")
+app.include_router(login, prefix="/api")
