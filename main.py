@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Depends
 from fastapi.responses import JSONResponse
 from register import register 
 from login import login
@@ -6,9 +6,25 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import cv2
 from ultralytics import YOLO
+from sqlalchemy.orm import Session
+from database import SessionLocal# Assuming you have this as a dependency
+from models import User, WasteLog
+from auth import get_user_from_token, oauth2_scheme  # Your JWT-based authentication dependency
+from fastapi.security import OAuth2PasswordBearer
+
 
 app = FastAPI()
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        
+        
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins, you can specify domains like ["https://example.com"]
@@ -48,29 +64,54 @@ async def read_root():
 
 
 @app.post("/predict_image/")
-async def predict_image(file: UploadFile = File(...)):
-    contents = await file.read()
+async def predict_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)  # get token directly
+):
+    current_user = get_user_from_token(token, db)  # ensure correct session!
 
-    # Convert to NumPy array
+    contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    # Predict using YOLO
     results = model.predict(img, conf=0.25, verbose=True)
 
-    # Parse detections and allocate points
     detections = []
     total_points = 0
     boxes = results[0].boxes
+
     if boxes is not None:
         for box in boxes:
             cls_id = int(box.cls[0])
             cls_name = model.names[cls_id]
             points = allocate_points(cls_name)
-            detections.append({'class': cls_name, 'points': points})
+
+            detections.append({
+                'class': cls_name,
+                'points': points
+            })
+
+            waste_log = WasteLog(
+                user_id=current_user.id,
+                waste_type=cls_name,
+                points_earned=points
+            )
+            db.add(waste_log)
             total_points += points
 
-    return JSONResponse(content={"detections": detections, "total_points": total_points})
+        # ✅ Update points and commit
+        current_user.points += total_points
+        db.commit()
+        db.refresh(current_user)
+
+    return JSONResponse(content={
+        "detections": detections,
+        "total_points": total_points,
+        "user_points": current_user.points
+    })
+
+
 
 app.include_router(register, prefix="/api")
 app.include_router(login, prefix="/api")
