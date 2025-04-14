@@ -23,6 +23,7 @@ const Login = () => {
       const res = await axios.post('/api/login', formData);
       console.log(res.data);
       localStorage.setItem('token', res.data.access_token);
+      localStorage.setItem('username', res.data.user.username); // Assuming the response contains the username
       navigate('/dashboard'); // Redirect to your secured area
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed');
