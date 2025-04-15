@@ -44,3 +44,10 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode = True
+class LeaderboardUser(BaseModel):
+    id: int
+    username: str
+    points: int
+
+    class Config:
+        orm_mode = True
