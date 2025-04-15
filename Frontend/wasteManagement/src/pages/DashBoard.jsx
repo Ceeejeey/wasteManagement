@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DetectWaste from '../components/DetectWaste'; // Importing the component
+import Leaderboard from '../components/Leaderboard'; // Importing the component
 
 const Dashboard = () => {
   const [username, setUsername] = useState('Guest');
@@ -18,7 +19,7 @@ const Dashboard = () => {
       case 'detect':
         return <DetectWaste />;
       case 'leaderboard':
-        return <div>Leaderboard Coming Soon 🚀</div>; // replace with <Leaderboard />
+        return <Leaderboard />;; // replace with <Leaderboard />
       case 'stats':
         return <div>Stats Coming Soon 📊</div>; // replace with <MyStats />
       default:

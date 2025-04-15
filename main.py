@@ -11,6 +11,7 @@ from database import SessionLocal# Assuming you have this as a dependency
 from models import User, WasteLog
 from auth import get_user_from_token, oauth2_scheme  # Your JWT-based authentication dependency
 from fastapi.security import OAuth2PasswordBearer
+from routes import router
 
 
 app = FastAPI()
@@ -115,3 +116,4 @@ async def predict_image(
 
 app.include_router(register, prefix="/api")
 app.include_router(login, prefix="/api")
+app.include_router(router, prefix="/api")
