@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DetectWaste from '../components/DetectWaste'; // Importing the component
 import Leaderboard from '../components/Leaderboard'; // Importing the component
+import MyStats from '../components/MyStats'; // Importing the new MyStats component
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState('Guest');
   const [activeComponent, setActiveComponent] = useState('detect');
 
@@ -19,9 +21,9 @@ const Dashboard = () => {
       case 'detect':
         return <DetectWaste />;
       case 'leaderboard':
-        return <Leaderboard />;; // replace with <Leaderboard />
+        return <Leaderboard />; // replace with <Leaderboard />
       case 'stats':
-        return <div>Stats Coming Soon 📊</div>; // replace with <MyStats />
+        return <MyStats />; // Render the MyStats component
       default:
         return <DetectWaste />;
     }
@@ -61,12 +63,16 @@ const Dashboard = () => {
 
           <div className="border-t border-green-400 my-2"></div>
 
-          <Link
-            to="/logout"
-            className="block text-xl hover:bg-green-700 py-2 px-4 rounded-lg transition"
+          <button
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('username');
+              navigate('/login');
+            }}
+            className="w-full text-left font-medium text-xl text-red-100 hover:bg-red-600 hover:text-white py-2 px-4 rounded-lg transition"
           >
             Logout
-          </Link>
+          </button>
         </nav>
       </div>
 
