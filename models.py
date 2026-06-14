@@ -15,6 +15,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     waste_logs = relationship("WasteLog", back_populates="user", cascade="all, delete")
+    spend_logs = relationship("SpendLog", back_populates="user", cascade="all, delete")
 
 class WasteLog(Base):
     __tablename__ = "waste_logs"
@@ -26,3 +27,15 @@ class WasteLog(Base):
     detected_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="waste_logs")
+
+class SpendLog(Base):
+    __tablename__ = "spend_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    amount = Column(Integer, nullable=False)
+    spent_on = Column(String(150), nullable=True)
+    spent_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="spend_logs")
+

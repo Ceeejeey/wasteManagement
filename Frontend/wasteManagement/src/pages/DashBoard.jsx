@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import DetectWaste from '../components/DetectWaste'; // Importing the component
 import Leaderboard from '../components/Leaderboard'; // Importing the component
 import MyStats from '../components/MyStats'; // Importing the new MyStats component
+import MySpends from '../components/MySpends'; // Importing the new MySpends component
+import HelpPage from '../components/HelpPage'; // Importing the new HelpPage component
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +26,10 @@ const Dashboard = () => {
         return <Leaderboard />; // replace with <Leaderboard />
       case 'stats':
         return <MyStats />; // Render the MyStats component
+      case 'spends':
+        return <MySpends />; // Render the MySpends component
+      case 'help':
+        return <HelpPage />; // Render the HelpPage component
       default:
         return <DetectWaste />;
     }
@@ -56,9 +62,27 @@ const Dashboard = () => {
 
           <button
             onClick={() => setActiveComponent('stats')}
-            className="w-full text-left text-xl hover:bg-green-700 py-2 px-4 rounded-lg transition"
+            className={`w-full text-left text-xl hover:bg-green-700 py-2 px-4 rounded-lg transition ${activeComponent === 'stats' ? 'bg-green-700' : ''}`}
           >
             My Stats
+          </button>
+
+          <div className="border-t border-green-400 my-2"></div>
+
+          <button
+            onClick={() => setActiveComponent('spends')}
+            className={`w-full text-left text-xl hover:bg-green-700 py-2 px-4 rounded-lg transition ${activeComponent === 'spends' ? 'bg-green-700' : ''}`}
+          >
+            My Spends
+          </button>
+
+          <div className="border-t border-green-400 my-2"></div>
+
+          <button
+            onClick={() => setActiveComponent('help')}
+            className={`w-full text-left text-xl hover:bg-green-700 py-2 px-4 rounded-lg transition ${activeComponent === 'help' ? 'bg-green-700' : ''}`}
+          >
+            How It Works
           </button>
 
           <div className="border-t border-green-400 my-2"></div>

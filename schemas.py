@@ -31,6 +31,17 @@ class WasteLogOut(BaseModel):
         orm_mode = True
 
 
+# 📉 Spend Log Schema
+class SpendLogOut(BaseModel):
+    id: int
+    amount: int
+    spent_on: Optional[str]
+    spent_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
 # 📤 User Output Schema (safe to return)
 class UserOut(BaseModel):
     id: int
@@ -41,6 +52,7 @@ class UserOut(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime]
     waste_logs: List[WasteLogOut] = []
+    spend_logs: List[SpendLogOut] = []
 
     class Config:
         orm_mode = True
@@ -49,5 +61,20 @@ class LeaderboardUser(BaseModel):
     username: str
     points: int
 
+class SpendPointsRequest(BaseModel):
+    user_id: int
+    amount: int
+    spent_on: str
+
+
     class Config:
         orm_mode = True
+
+# ✅ Detection Item (sent from frontend when user confirms)
+class DetectionItem(BaseModel):
+    waste_type: str
+    points_earned: int
+
+# ✅ Confirm Detection Request
+class ConfirmDetectionRequest(BaseModel):
+    detections: List[DetectionItem]
